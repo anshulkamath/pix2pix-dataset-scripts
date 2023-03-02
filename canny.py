@@ -11,13 +11,13 @@ parser = argparse.ArgumentParser(prog='EdgeDetector', description='Takes in imag
 parser.add_argument('filename')
 parser.add_argument('-o', '--output')
 parser.add_argument('-s', '--show', action='store_true')
-parser.add_argument('-h', '--height', default=128)
+parser.add_argument('-d', '--dimension', default=256, type=int)
 args = parser.parse_args()
 
 img = cv2.cvtColor(cv2.imread(args.filename), cv2.COLOR_BGR2RGB)
 edges = cv2.bitwise_not(cv2.Canny(img, 50, 200))
 
-SIDE_DIMENSION = args.height
+SIDE_DIMENSION = args.dimension
 
 if args.show:
   plt.subplot(121),plt.imshow(img,cmap = 'gray')
@@ -34,7 +34,7 @@ if args.output:
   prefix, extension = re.split(r'\.', args.output)
 
   if height != SIDE_DIMENSION:
-    raise Exception('The images should have a height of 128 pixels')
+    raise Exception(f'The images should have a height of 256 pixels, but instead has a height of {height}')
   
   if width == SIDE_DIMENSION:
     new_image = Image.new('RGB', (2 * height, height))

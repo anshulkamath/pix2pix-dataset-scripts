@@ -10,6 +10,7 @@ EXTRACT_IMAGES=false
 # image extraction rate in frames per second
 HIGH_SAMPLE='1'
 LOW_SAMPLE='1/3'
+IMG_HEIGHT='256'
 
 function make_directories() {
   # Create necessary input directories
@@ -38,7 +39,6 @@ function make_directories() {
 function extract_photos() {
   # Extract the images and downsize them
   for i in "${DIRECTORIES[@]}"; do
-    IMG_HEIGHT='128'
     FFMPEG_OUTPUT_PREFIX="$INPUT_DIR/$i/$i-"
 
     if [[ $i == 'ny-skyline' ]]; then
@@ -57,7 +57,7 @@ function create_edges() {
 
     for j in $(ls "$INPUT_DIR/$i"); do
       FILE="$INPUT_DIR/$i/$j"
-      ./canny.py "$FILE" -o "$FILE"
+      python3 canny.py $FILE -o $FILE -d $IMG_HEIGHT
       rm $FILE
     done
   done
