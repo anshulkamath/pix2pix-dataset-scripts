@@ -5,7 +5,11 @@ VIDEO_DIR='videos'
 OUTPUT_DIR='output'
 DATASET_NAME='pix2pix-dataset'
 DIRECTORIES=()
-OVERWRITE=false
+EXTRACT_IMAGES=false
+
+# image extraction rate in frames per second
+HIGH_SAMPLE='1'
+LOW_SAMPLE='1/3'
 
 function make_directories() {
   # Create necessary input directories
@@ -19,7 +23,7 @@ function make_directories() {
     DIRECTORIES+=("$curr")
     DIRECTORY_PATH="$INPUT_DIR/$curr"
 
-    if ! $OVERWRITE; then
+    if ! $EXTRACT_IMAGES; then
       continue
     fi
 
@@ -33,8 +37,6 @@ function make_directories() {
 
 function extract_photos() {
   # Extract the images and downsize them
-  HIGH_SAMPLE='1'
-  LOW_SAMPLE='1/3'
   for i in "${DIRECTORIES[@]}"; do
     IMG_HEIGHT='128'
     FFMPEG_OUTPUT_PREFIX="$INPUT_DIR/$i/$i-"
@@ -74,7 +76,7 @@ function create_dataset() {
 }
 
 make_directories
-if $OVERWRITE ; then
+if $EXTRACT_IMAGES ; then
   extract_photos
   create_edges
 fi
