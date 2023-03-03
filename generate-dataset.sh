@@ -6,11 +6,56 @@ OUTPUT_DIR='output'
 DATASET_NAME='pix2pix-dataset'
 DIRECTORIES=()
 EXTRACT_IMAGES=false
+PYTHON_DIR=$(which python3)
 
 # image extraction rate in frames per second
-HIGH_SAMPLE='1'
-LOW_SAMPLE='1/3'
-IMG_HEIGHT='256'
+SAMPLE_FRAMES=200
+IMG_HEIGHT=256
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+  -t|--training-output)
+      shift
+      OUTPUT=$1
+      shift
+      ;;
+  -f|--frames)
+      shift
+      SAMPLE_FRAMES=$1
+      shift
+      ;;
+  -s|--size)
+      shift
+      IMG_HEIGHT=$1
+      shift
+      ;;
+  -i|--input)
+      shift
+      VIDEO_DIR=$1
+      shift
+      ;;
+  -o|--output)
+      shift
+      DATASET_NAME=$1
+      shift
+      ;;
+  -w|--overwrite)
+    EXTRACT_IMAGES=true
+    shift
+    ;;
+  -h|--help|-*|--*)
+      echo 'Usage: ./generate-dataset [options]'
+      echo "    --training-output (-t) - The output directory for training images. Default: `output`"
+      echo "    --frames          (-f) - The number of evenly-spaced frames to pull from each video. Default: 200"
+      echo "    --size            (-s) - The desired height of each image. Default: 256"
+      echo "    --input           (-i) - The input directory that contains videos. Default: `videos`"
+      echo "    --output          (-o) - The desired name of the .zip file with all the data. Default: `pix2pix-dataset`"
+      echo "    --write           (-w) - Will overwrite and regenerate all images. Default: `false`"
+      shift
+      exit 0
+      ;;
+  esac
+done
 
 function make_directories() {
   # Create necessary input directories
@@ -36,17 +81,18 @@ function make_directories() {
   done
 }
 
+# gets the necessary frame rate from the video and the desired number of frames
+function get_frame_rate() {
+  local duration=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 $1)
+  $PYTHON_DIR -c "print(int($2)/int($duration))"
+}
+
 function extract_photos() {
   # Extract the images and downsize them
   for i in "${DIRECTORIES[@]}"; do
     FFMPEG_OUTPUT_PREFIX="$INPUT_DIR/$i/$i-"
-
-    if [[ $i == 'ny-skyline' ]]; then
-      ffmpeg -i "$VIDEO_DIR/$i.mp4" -vf "fps=$LOW_SAMPLE,scale=-1:$IMG_HEIGHT" -q:v 2 "${FFMPEG_OUTPUT_PREFIX}%03d.jpg"
-      continue
-    fi
-
-    ffmpeg -i "$VIDEO_DIR/$i.mp4" -vf "fps=$HIGH_SAMPLE,scale=-1:$IMG_HEIGHT" -q:v 2 "${FFMPEG_OUTPUT_PREFIX}%03d.jpg"
+    local frame_rate=$(get_frame_rate "$VIDEO_DIR/$i.mp4" $SAMPLE_FRAMES)
+    ffmpeg -i "$VIDEO_DIR/$i.mp4" -vf "fps=$frame_rate,scale=-1:$IMG_HEIGHT" -q:v 2 "${FFMPEG_OUTPUT_PREFIX}%03d.jpg"
   done
 }
 
@@ -57,7 +103,7 @@ function create_edges() {
 
     for j in $(ls "$INPUT_DIR/$i"); do
       FILE="$INPUT_DIR/$i/$j"
-      python3 canny.py $FILE -o $FILE -d $IMG_HEIGHT
+      $PYTHON_DIR canny.py $FILE -o $FILE -d $IMG_HEIGHT
       rm $FILE
     done
   done
