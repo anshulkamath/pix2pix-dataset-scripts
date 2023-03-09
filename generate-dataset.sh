@@ -8,8 +8,6 @@ DIRECTORIES=()
 EXTRACT_IMAGES=false
 PYTHON_DIR=$(which python3)
 
-# image extraction rate in frames per second
-SAMPLE_FRAMES=200
 IMG_HEIGHT=256
 
 while [[ $# -gt 0 ]]; do
@@ -91,8 +89,11 @@ function extract_photos() {
   # Extract the images and downsize them
   for i in "${DIRECTORIES[@]}"; do
     FFMPEG_OUTPUT_PREFIX="$INPUT_DIR/$i/$i-"
-    local frame_rate=$(get_frame_rate "$VIDEO_DIR/$i.mp4" $SAMPLE_FRAMES)
+    echo "How many frames would you like to sample from $i.mp4? "
+    read frames
+    local frame_rate=$(get_frame_rate "$VIDEO_DIR/$i.mp4" $frames)
     ffmpeg -i "$VIDEO_DIR/$i.mp4" -vf "fps=$frame_rate,scale=-1:$IMG_HEIGHT" -q:v 2 "${FFMPEG_OUTPUT_PREFIX}%03d.jpg"
+    clear
   done
 }
 
